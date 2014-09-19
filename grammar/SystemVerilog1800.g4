@@ -1,4 +1,4 @@
-grammar SystemVerilog1800;    
+grammar SystemVerilog1800;
 // SystemVerilog IEEE 1800-2012 BNF
 
 // 1 Source text
@@ -92,11 +92,11 @@ program_ansi_header :
 
 checker_declaration :
       'checker' checker_identifier ( '(' ( checker_port_list )? ')' )? ';'
-      ( { attribute_instance )* checker_or_generate_item )* 'endchecker' ( ':' checker_identifier )?;
+      ( ( attribute_instance )* checker_or_generate_item )* 'endchecker' ( ':' checker_identifier )?;
 
 class_declaration :
       ( 'virtual' )? 'class' ( lifetime )? class_identifier ( parameter_port_list )?
-      ( 'extends' class_type ( '(' list_of_arguments ')' )? ]
+      ( 'extends' class_type ( '(' list_of_arguments ')' )? )?
       ( 'implements' interface_class_type ( ',' interface_class_type )* )? ';' ( class_item )* 'endclass'
       ( ':' class_identifier )?;
 
@@ -120,7 +120,7 @@ interface_class_method :
 
 package_declaration :
       ( attribute_instance )* 'package' ( lifetime )? package_identifier ';' ( timeunits_declaration )?
-      ( { attribute_instance )* package_item )* 'endpackage' ( ':' package_identifier )?;
+      ( ( attribute_instance )* package_item )* 'endpackage' ( ':' package_identifier )?;
 
 timeunits_declaration :
       'timeunit' time_literal ( '/' time_literal )? ';'
@@ -161,7 +161,7 @@ port :
       ( port_expression )? | '.' port_identifier '(' ( port_expression )? ')';
 
 port_expression :
-      port_reference | ( port_reference ( ',' port_reference )* };
+      port_reference | '{' port_reference ( ',' port_reference )* '}';
 
 port_reference :
       port_identifier constant_select;
@@ -568,7 +568,7 @@ genvar_declaration :
       'genvar' list_of_genvar_identifiers ';';
 
 net_declaration :
-      net_type ( drive_strength | charge_strength )? ( 'vectored' | scalared )? data_type_or_implicit
+      net_type ( drive_strength | charge_strength )? ( 'vectored' | 'scalared' )? data_type_or_implicit
       ( delay3 )? list_of_net_decl_assignments ';'
     | net_type_identifier ( delay_control )? list_of_net_decl_assignments ';'
     | 'interconnect' implicit_data_type ( '#' delay_value )? net_identifier ( unpacked_dimension )*
@@ -598,7 +598,7 @@ data_type :
       integer_vector_type ( signing )? ( packed_dimension )*
     | integer_atom_type ( signing )?
     | non_integer_type
-    | struct_union ( 'packed' ( signing )? ] '{' struct_union_member ( struct_union_member )* '}'
+    | struct_union ( 'packed' ( signing )? )? '{' struct_union_member ( struct_union_member )* '}'
       ( packed_dimension )*
     | 'enum' ( enum_base_type )? '{' enum_name_declaration ( ',' enum_name_declaration )* '}'
       ( packed_dimension )*
@@ -699,7 +699,7 @@ charge_strength :
 
 delay3 :
       '#' delay_value
-    | '#' '(' mintypmax_expression ( ',' mintypmax_expression ( ',' mintypmax_expression )? ] ')';
+    | '#' '(' mintypmax_expression ( ',' mintypmax_expression ( ',' mintypmax_expression )? )? ')';
 
 delay2 :
       '#' delay_value | '#' '(' mintypmax_expression ( ',' mintypmax_expression )? ')';
@@ -716,7 +716,7 @@ list_of_genvar_identifiers :
       genvar_identifier ( ',' genvar_identifier )*;
 
 list_of_interface_identifiers :
-      interface_identifier ( unpacked_dimension )* ( ',' interface_identifier ( unpacked_dimension )* };
+      interface_identifier ( unpacked_dimension )* ( ',' interface_identifier ( unpacked_dimension )* )*;
 
 list_of_net_decl_assignments :
       net_decl_assignment ( ',' net_decl_assignment )*;
@@ -725,7 +725,7 @@ list_of_param_assignments :
       param_assignment ( ',' param_assignment )*;
 
 list_of_port_identifiers :
-      port_identifier ( unpacked_dimension )* ( ',' port_identifier ( unpacked_dimension )* };
+      port_identifier ( unpacked_dimension )* ( ',' port_identifier ( unpacked_dimension )* )*;
 
 list_of_udp_port_identifiers :
       port_identifier ( ',' port_identifier )*;
@@ -744,7 +744,7 @@ list_of_variable_decl_assignments :
       variable_decl_assignment ( ',' variable_decl_assignment )*;
 
 list_of_variable_identifiers :
-      variable_identifier ( variable_dimension )* ( ',' variable_identifier ( variable_dimension )* };
+      variable_identifier ( variable_dimension )* ( ',' variable_identifier ( variable_dimension )* )*;
 
 list_of_variable_port_identifiers :
       port_identifier ( variable_dimension )* ( '=' constant_expression )?
@@ -872,17 +872,17 @@ tf_port_list :
 
 tf_port_item :
       ( attribute_instance )* ( tf_port_direction )? ( 'var' )? data_type_or_implicit
-      ( port_identifier ( variable_dimension )* ( '=' expression )? ];
+      ( port_identifier ( variable_dimension )* ( '=' expression )? )?;
 
 tf_port_direction :
-      port_direction | const ref;
+      port_direction | 'const' 'ref';
 
 tf_port_declaration :
-      ( attribute_instance )* tf_port_direction ( var )? data_type_or_implicit
+      ( attribute_instance )* tf_port_direction ( 'var' )? data_type_or_implicit
       list_of_tf_variable_identifiers ';';
 
 task_prototype :
-      task task_identifier ( '(' ( tf_port_list )? ')' )?;
+      'task' task_identifier ( '(' ( tf_port_list )? ')' )?;
 
 // 2.8 Block item declarations
 
@@ -986,7 +986,7 @@ property_port_list :
       property_port_item ( ',' property_port_item )*;
 
 property_port_item :
-      ( attribute_instance )* ( 'local' ( property_lvar_port_direction )? ] property_formal_type
+      ( attribute_instance )* ( 'local' ( property_lvar_port_direction )? )? property_formal_type
       formal_port_identifier ( variable_dimension )* ( '=' property_actual_arg )?;
 
 property_lvar_port_direction :
@@ -1013,7 +1013,7 @@ property_expr :
     | sequence_expr '#-#' property_expr
     | sequence_expr '#=#' property_expr
     | 'nexttime' property_expr
-    | 'nexttime' '[' constant _expression ']' property_expr
+    | 'nexttime' '[' constant_expression ']' property_expr
     | 's_nexttime' property_expr
     | 's_nexttime' '[' constant_expression ']' property_expr
     | 'always' property_expr
@@ -1047,7 +1047,7 @@ sequence_port_list :
       sequence_port_item ( ',' sequence_port_item )*;
 
 sequence_port_item :
-      ( attribute_instance )* ( 'local' ( sequence_lvar_port_direction )? ] sequence_formal_type
+      ( attribute_instance )* ( 'local' ( sequence_lvar_port_direction )? )? sequence_formal_type
       formal_port_identifier ( variable_dimension )* ( '=' sequence_actual_arg )?;
 
 sequence_lvar_port_direction :
@@ -1065,7 +1065,7 @@ sequence_expr :
     | sequence_expr 'and' sequence_expr
     | sequence_expr 'intersect' sequence_expr
     | sequence_expr 'or' sequence_expr
-    | first_match '(' sequence_expr ( ',' sequence_match_item )* ')'
+    | 'first_match' '(' sequence_expr ( ',' sequence_match_item )* ')'
     | expression_or_dist 'throughout' sequence_expr
     | sequence_expr 'within' sequence_expr
     | clocking_event sequence_expr;
@@ -1173,7 +1173,7 @@ hierarchical_btf_identifier :
     | ( hierarchical_identifier '.' | class_scope )? method_identifier;
 
 cover_point :
-      ( [ data_type_or_implicit )? cover_point_identifier ':' )? 'coverpoint' expression
+      ( ( data_type_or_implicit )? cover_point_identifier ':' )? 'coverpoint' expression
       ( 'iff' '(' expression ')' )? bins_or_empty;
 
 bins_or_empty :
@@ -1226,7 +1226,7 @@ cross_body :
       '{' ( cross_body_item ';' )* '}' | ';';
 
 cross_body_item :
-      function_declaraton | bins_selection_or_option ';';
+      function_declaration | bins_selection_or_option ';';
 
 bins_selection_or_option :
       ( attribute_instance )* coverage_option | ( attribute_instance )* bins_selection;
@@ -1527,7 +1527,7 @@ udp_initial_statement :
       'initial' output_port_identifier '=' init_val ';';
 
 init_val :
-      '1'b0' | '1'b1' | '1'bx' | '1'bX' | '1'B0' | '1'B1' | '1'Bx' | '1'BX' | '1' | '0';
+      '1\'b0' | '1\'b1' | '1\'bx' | '1\'bX' | '1\'B0' | '1\'B1' | '1\'Bx' | '1\'BX' | '1' | '0';
 
 sequential_entry :
       seq_input_list ':' current_state ':' next_state ';';
@@ -1793,14 +1793,14 @@ pattern :
     | '.*'
     | constant_expression
     | 'tagged' member_identifier ( pattern )?
-    | ''{' pattern ( ',' pattern )* '}'
-    | ''{' member_identifier ':' pattern ( ',' member_identifier ':' pattern )* '}';
+    | '\'{' pattern ( ',' pattern )* '}'
+    | '\'{' member_identifier ':' pattern ( ',' member_identifier ':' pattern )* '}';
 
 assignment_pattern :
-      ''{' expression ( ',' expression )* '}'
-    | ''{' structure_pattern_key ':' expression ( ',' structure_pattern_key ':' expression )* '}'
-    | ''{' array_pattern_key ':' expression ( ',' array_pattern_key ':' expression )* '}'
-    | ''{' constant_expression '{' expression ( ',' expression )* '}' '}';
+      '\'{' expression ( ',' expression )* '}'
+    | '\'{' structure_pattern_key ':' expression ( ',' structure_pattern_key ':' expression )* '}'
+    | '\'{' array_pattern_key ':' expression ( ',' array_pattern_key ':' expression )* '}'
+    | '\'{' constant_expression '{' expression ( ',' expression )* '}' '}';
 
 structure_pattern_key :
       member_identifier | assignment_pattern_key;
@@ -1821,10 +1821,10 @@ constant_assignment_pattern_expression :
       assignment_pattern_expression;
 
 assignment_pattern_net_lvalue :
-      ''{' net_lvalue ( ',' net_lvalue )* '}';
+      '\'{' net_lvalue ( ',' net_lvalue )* '}';
 
 assignment_pattern_variable_lvalue :
-      ''{' variable_lvalue ( ',' variable_lvalue )* '}';
+      '\'{' variable_lvalue ( ',' variable_lvalue )* '}';
 
 // 6.8 Looping statements
 
@@ -1854,7 +1854,7 @@ loop_variables :
 // 6.9 Subroutine call statements
 
 subroutine_call_statement :
-      subroutine_call ';' | void ''' '(' function_subroutine_call ')' ';';
+      subroutine_call ';' | 'void' '\'' '(' function_subroutine_call ')' ';';
 
 // 6.10 Assertion statements
 
@@ -1914,7 +1914,7 @@ clocking_item :
     | ( attribute_instance )* assertion_item_declaration;
 
 default_skew :
-      'input' clocking_skew | 'output' clocking_skew | 'input' clocking_skew output clocking_skew;
+      'input' clocking_skew | 'output' clocking_skew | 'input' clocking_skew 'output' clocking_skew;
 
 clocking_direction :
       'input' ( clocking_skew )?
@@ -1952,7 +1952,7 @@ production :
       ( data_type_or_void )? production_identifier ( '(' tf_port_list ')' )? ':' rs_rule ( '|' rs_rule )* ';';
 
 rs_rule :
-      rs_production_list ( ':=' weight_specification ( rs_code_block )? ];
+      rs_production_list ( ':=' weight_specification ( rs_code_block )? )?;
 
 rs_production_list :
       rs_prod ( rs_prod )*
@@ -2152,51 +2152,51 @@ system_timing_check :
     | nochange_timing_check;
 
 setup_timing_check :
-      '$setup' '(' data_event ',' reference_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$setup' '(' data_event ',' reference_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 hold_timing_check :
-      '$hold' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$hold' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 setuphold_timing_check :
       '$setuphold' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit
       ( ',' ( notifier )?
         ( ',' ( timestamp_condition )?
-          ( ',' ( timecheck_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? ] )? ] )? ]
+          ( ',' ( timecheck_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? )? )? )? )? )?
       ')' ';';
 
 recovery_timing_check :
-      '$recovery' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$recovery' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 removal_timing_check :
-      '$removal' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$removal' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 recrem_timing_check :
       '$recrem' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit
       ( ',' ( notifier )?
         ( ',' ( timestamp_condition )?
-          ( ',' ( timecheck_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? ] )? ] )? ]
+          ( ',' ( timecheck_condition )? ( ',' ( delayed_reference )? ( ',' ( delayed_data )? )? )? )? )? )?
       ')' ';';
 
 skew_timing_check :
-      '$skew' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$skew' '(' reference_event ',' data_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 timeskew_timing_check :
       '$timeskew' '(' reference_event ',' data_event ',' timing_check_limit
-      ( ',' ( notifier )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? ] )? ] ')' ';';
+      ( ',' ( notifier )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? )? )? )? ')' ';';
 
 fullskew_timing_check :
       '$fullskew' '(' reference_event ',' data_event ',' timing_check_limit ',' timing_check_limit
-      ( ',' ( notifier )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? ] )? ] ')' ';';
+      ( ',' ( notifier )? ( ',' ( event_based_flag )? ( ',' ( remain_active_flag )? )? )? )? ')' ';';
 
 period_timing_check :
-      '$period' '(' controlled_reference_event ',' timing_check_limit ( ',' ( notifier )? ] ')' ';';
+      '$period' '(' controlled_reference_event ',' timing_check_limit ( ',' ( notifier )? )? ')' ';';
 
 width_timing_check :
-      '$width' '(' controlled_reference_event ',' timing_check_limit ',' threshold ( ',' ( notifier )? ] ')' ';';
+      '$width' '(' controlled_reference_event ',' timing_check_limit ',' threshold ( ',' ( notifier )? )? ')' ';';
 
 nochange_timing_check :
       '$nochange' '(' reference_event ',' data_event ',' start_edge_offset ',' end_edge_offset
-      ( ',' ( notifier )? ] ')' ';';
+      ( ',' ( notifier )? )? ')' ';';
 
 // 7.5.2 System timing check command arguments
 
@@ -2259,7 +2259,7 @@ specify_terminal_descriptor :
 edge_control_specifier :
       'edge' '[' edge_descriptor ( ',' edge_descriptor )* ']';
 
-edge_descriptor :!
+edge_descriptor :
       '01' | '10' | z_or_x zero_or_one | zero_or_one z_or_x;
 
 zero_or_one :
@@ -2280,7 +2280,7 @@ scalar_timing_check_condition :
     | expression '!==' scalar_constant;
 
 scalar_constant :
-      '1'b0' | '1'b1' | '1'B0' | '1'B1' | ''b0' | ''b1' | ''B0' | ''B1' | '1' | '0';
+      '1\'b0' | '1\'b1' | '1\'B0' | '1\'B1' | '\'b0' | '\'b1' | '\'B0' | '\'B1' | '1' | '0';
 
 // 8 Expressions
 
@@ -2530,13 +2530,13 @@ constant_select :
       ( '[' constant_part_select_range ']' )?;
 
 constant_cast :
-      casting_type ''' '(' constant_expression ')';
+      casting_type '\'' '(' constant_expression ')';
 
 constant_let_expression :
       let_expression;
 
 cast :
-      casting_type ''' '(' expression ')';
+      casting_type '\'' '(' expression ')';
 
 // 8.5 Expression left-side values
 
@@ -2628,41 +2628,41 @@ sign :
 size :
       non_zero_unsigned_number;
 
-non_zero_unsigned_number :!
+non_zero_unsigned_number :
       non_zero_decimal_digit ( '_' | decimal_digit )*;
 
-real_number :!
+real_number :
       fixed_point_number | unsigned_number ( '.' unsigned_number )? exp ( sign )? unsigned_number;
 
-fixed_point_number :!
+fixed_point_number :
       unsigned_number '.' unsigned_number;
 
 exp :
       'e' | 'E';
 
-unsigned_number :!
+unsigned_number :
       decimal_digit ( '_' | decimal_digit )*;
 
-binary_value :!
+binary_value :
       binary_digit ( '_' | binary_digit )*;
 
-octal_value :!
+octal_value :
       octal_digit ( '_' | octal_digit )*;
 
-hex_value :!
+hex_value :
       hex_digit ( '_' | hex_digit )*;
 
-decimal_base :!
-      ''' ( 's' | 'S' )? 'd' | ''' ( 's' | 'S' )? 'D';
+decimal_base :
+      '\'' ( 's' | 'S' )? 'd' | '\'' ( 's' | 'S' )? 'D';
 
-binary_base :!
-      ''' ( 's' | 'S' )? 'b' | ''' ( 's' | 'S' )? 'B';
+binary_base :
+      '\'' ( 's' | 'S' )? 'b' | '\'' ( 's' | 'S' )? 'B';
 
-octal_base :!
-      ''' ( 's' | 'S' )? 'o' | ''' ( 's' | 'S' )? 'O';
+octal_base :
+      '\'' ( 's' | 'S' )? 'o' | '\'' ( 's' | 'S' )? 'O';
 
-hex_base :!
-      ''' ( 's' | 'S' )? 'h' | ''' ( 's' | 'S' )? 'H';
+hex_base :
+      '\'' ( 's' | 'S' )? 'h' | '\'' ( 's' | 'S' )? 'H';
 
 non_zero_decimal_digit :
       '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
@@ -2709,7 +2709,7 @@ z_digit :
       'z' | 'Z' | '?';
 
 unbased_unsized_literal :
-      ''0' | ''1' | ''z_or_x';
+      '\'0' | '\'1' | '\''z_or_x;
 
 // 8.8 Strings
 
@@ -2985,4 +2985,3 @@ udp_identifier :
 
 variable_identifier :
       identifier;
-
