@@ -1,6 +1,29 @@
 grammar SystemVerilog1800;
 // SystemVerilog IEEE 1800-2012 BNF
 
+
+
+// Lexer rules
+
+// 9.3 Identifiers
+
+Escaped_identifier :
+      '\\' ~[ \r\t\n]*
+      {_input.LA(1)!=' '&&_input.LA(1)!='\t'&&_input.LA(1)!='\t'&&_input.LA(1)!='\n'}? ;
+
+
+// 9.4 White space
+White_space : [ \t\n\r]+ -> channel(HIDDEN) ;
+
+
+// Additional rules
+File_path_spec : ([/~] | './') ~[ \r\t\n]*? ;
+
+
+
+
+
+
 // 1 Source text
 
 // 1.1 Library source text
@@ -2799,8 +2822,9 @@ dynamic_array_variable_identifier :
 enum_identifier :
       identifier;
 
-escaped_identifier :
-      '\' ( any_printable_ASCII_character_except_white_space )* white_space;
+Escaped_identifier :
+      '\\' ~[ \r\t\n]*
+      {_input.LA(1)!=' '&&_input.LA(1)!='\t'&&_input.LA(1)!='\t'&&_input.LA(1)!='\n'}? ;
 
 formal_identifier :
       identifier;
